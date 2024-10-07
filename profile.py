@@ -24,7 +24,8 @@ central_node.addService(pg.Execute(shell="sh", command="sysctl -w net.ipv4.ip_fo
 num_spokes = 5
 for i in range(1, num_spokes + 1):
     # Create a spoke node.
-    node = request.XenVM(f"node{i}")
+    # node = request.XenVM(f"node{i}")
+    node = request.XenVM("node{}".format(i))
     node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"
     
     # Add an interface to the spoke node and assign an IP address.
