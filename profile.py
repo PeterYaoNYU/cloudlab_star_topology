@@ -20,19 +20,19 @@ central_node.addService(pg.Execute(shell="/bin/sh", command="sysctl -w net.ipv4.
 num_spokes = 5
 for i in range(1, num_spokes + 1):
     # Create a spoke node.
-    node = request.XenVM(f"node{i}")
+    node = request.XenVM("node{i}".format(i))
     node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"
 
     # Add an interface to the spoke node and assign an IP address.
-    spoke_iface = node.addInterface(f"ifc_node{i}")
-    spoke_iface.addAddress(pg.IPv4Address(f"10.0.{i}.2", "255.255.255.0"))
+    spoke_iface = node.addInterface("ifc_node{i}".format(i))
+    spoke_iface.addAddress(pg.IPv4Address("10.0.{i}.2".format(i), "255.255.255.0"))
 
     # Create a unique interface on the central node for this link.
-    central_iface = central_node.addInterface(f"ifc_central{i}")
-    central_iface.addAddress(pg.IPv4Address(f"10.0.{i}.1", "255.255.255.0"))
+    central_iface = central_node.addInterface("ifc_central{i}".format(i))
+    central_iface.addAddress(pg.IPv4Address("10.0.{i}.1".format(i), "255.255.255.0"))
 
     # Create a link between the central node and the spoke node.
-    link = request.Link(f"link{i}")
+    link = request.Link("link{i}".format(i))
     link.addInterface(central_iface)
     link.addInterface(spoke_iface)
     link.bandwidth = 1000  # Set bandwidth to 1 Gbps
@@ -43,7 +43,7 @@ for i in range(1, num_spokes + 1):
             # Route to subnet 10.0.j.0/24 via the central node's interface.
             node.addService(pg.Execute(
                 shell="/bin/sh",
-                command=f"ip route add 10.0.{j}.0/24 via 10.0.{i}.1"
+                command="ip route add 10.0.{j}.0/24 via 10.0.{i}.1".format(j=j, i=i)
             ))
 
 # Output the RSpec.
