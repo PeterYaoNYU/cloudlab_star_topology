@@ -13,10 +13,6 @@ request = pc.makeRequestRSpec()
 central_node = request.XenVM("central")
 central_node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"
 
-# Assign IP address to the central node.
-central_iface = central_node.addInterface("ifc_central")
-central_iface.addAddress(pg.IPv4Address("10.0.0.100", "255.255.255.0"))
-
 # Enable IP forwarding on the central node.
 central_node.addService(pg.Execute(shell="/bin/sh", command="sysctl -w net.ipv4.ip_forward=1"))
 
@@ -24,26 +20,31 @@ central_node.addService(pg.Execute(shell="/bin/sh", command="sysctl -w net.ipv4.
 num_spokes = 5
 for i in range(1, num_spokes + 1):
     # Create a spoke node.
-    node = request.XenVM("node{}".format(i))
+    node = request.XenVM(f"node{i}")
     node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"
-    
+
     # Add an interface to the spoke node and assign an IP address.
-    iface = node.addInterface("ifc_node{}".format(i))
-    iface.addAddress(pg.IPv4Address("10.0.0.{}".format(i), "255.255.255.0"))
-    
+    spoke_iface = node.addInterface(f"ifc_node{i}")
+    spoke_iface.addAddress(pg.IPv4Address(f"10.0.{i}.2", "255.255.255.0"))
+
+    # Create a unique interface on the central node for this link.
+    central_iface = central_node.addInterface(f"ifc_central{i}")
+    central_iface.addAddress(pg.IPv4Address(f"10.0.{i}.1", "255.255.255.0"))
+
     # Create a link between the central node and the spoke node.
-    link = request.Link("link{}".format(i))
+    link = request.Link(f"link{i}")
     link.addInterface(central_iface)
-    link.addInterface(iface)
+    link.addInterface(spoke_iface)
     link.bandwidth = 1000  # Set bandwidth to 1 Gbps
-    
-    # Enable IP forwarding on the spoke node.
-    node.addService(pg.Execute(shell="/bin/sh", command="sysctl -w net.ipv4.ip_forward=1"))
-    
-    # Add static route on the spoke node to reach other spoke nodes via the central router.
+
+    # Add static routes on the spoke node to reach other spokes via the central router.
     for j in range(1, num_spokes + 1):
         if i != j:
-            node.addService(pg.Execute(shell="/bin/sh", command="ip route add 10.0.0.{} via 10.0.0.100".format(j)))
+            # Route to subnet 10.0.j.0/24 via the central node's interface.
+            node.addService(pg.Execute(
+                shell="/bin/sh",
+                command=f"ip route add 10.0.{j}.0/24 via 10.0.{i}.1"
+            ))
 
 # Output the RSpec.
 pc.printRequestRSpec()
