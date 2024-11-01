@@ -10,7 +10,7 @@ pc = portal.Context()
 request = pc.makeRequestRSpec()
 
 # Create the central node (router).
-central_node = request.XenVM("central")
+central_node = request.RawPC("central")
 central_node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"
 
 # Enable IP forwarding on the central node.
@@ -20,7 +20,7 @@ central_node.addService(pg.Execute(shell="/bin/sh", command="sysctl -w net.ipv4.
 num_spokes = 5
 for i in range(1, num_spokes + 1):
     # Create a spoke node.
-    node = request.XenVM("node{}".format(i))
+    node = request.RawPC("node{}".format(i))
     node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"
 
     # Add an interface to the spoke node and assign an IP address.
