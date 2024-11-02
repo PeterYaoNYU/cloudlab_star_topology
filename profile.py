@@ -1,6 +1,5 @@
-# Import the Portal object.
+# Import the Portal and ProtoGENI libraries.
 import geni.portal as portal
-# Import the ProtoGENI library.
 import geni.rspec.pg as pg
 
 # Create a portal context.
@@ -9,18 +8,20 @@ pc = portal.Context()
 # Begin building the RSpec.
 request = pc.makeRequestRSpec()
 
-# Create the central node (router).
+# Create the central node (router) as a RawPC to provide sufficient network interfaces.
 central_node = request.RawPC("central")
 central_node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"
 
 # Enable IP forwarding on the central node.
 central_node.addService(pg.Execute(shell="/bin/sh", command="sysctl -w net.ipv4.ip_forward=1"))
 
-# Create spoke nodes and links to the central node.
+# Number of spoke nodes
 num_spokes = 5
+
+# Loop to create VM spoke nodes and links to the central node.
 for i in range(1, num_spokes + 1):
-    # Create a spoke node.
-    node = request.RawPC("node{}".format(i))
+    # Create a spoke node as a VM.
+    node = request.XenVM("node{}".format(i))
     node.disk_image = "urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD"
 
     # Add an interface to the spoke node and assign an IP address.
